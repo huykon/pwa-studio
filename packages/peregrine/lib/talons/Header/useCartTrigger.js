@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { useApolloClient, useQuery, useMutation } from '@apollo/client';
+import { useApolloClient, useLazyQuery, useMutation } from '@apollo/client';
 import { useHistory } from 'react-router-dom';
 
 import { useCartContext } from '@magento/peregrine/lib/context/cart';
@@ -21,13 +21,16 @@ export const useCartTrigger = props => {
     } = useDropdown();
     const history = useHistory();
 
-    const { data } = useQuery(getItemCountQuery, {
-        fetchPolicy: 'cache-and-network',
-        variables: {
-            cartId
-        },
-        skip: !cartId
-    });
+    const [runQuery, { data }] = useLazyQuery(getItemCountQuery);
+
+    useEffect(() => {
+        if (cartId) {
+            runQuery({
+                fetchPolicy: 'cache-and-network',
+                variables: { cartId }
+            });
+        }
+    }, [cartId, runQuery]);
 
     const [fetchCartId] = useMutation(createCartMutation);
     const fetchCartDetails = useAwaitQuery(getCartDetailsQuery);

@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useHistory } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useLazyQuery, useMutation } from '@apollo/client';
 
 import { useCartContext } from '../../context/cart';
 
@@ -25,15 +25,19 @@ export const useMiniCart = props => {
     const [{ cartId }] = useCartContext();
     const history = useHistory();
 
-    const {
-        data: miniCartData,
-        loading: miniCartLoading,
-        error: miniCartError
-    } = useQuery(miniCartQuery, {
-        fetchPolicy: 'cache-and-network',
-        variables: { cartId },
-        skip: !cartId
-    });
+    const [
+        runQuery,
+        { data: miniCartData, loading: miniCartLoading, error: miniCartError }
+    ] = useLazyQuery(miniCartQuery);
+
+    useEffect(() => {
+        if (cartId) {
+            runQuery({
+                fetchPolicy: 'cache-and-network',
+                variables: { cartId }
+            });
+        }
+    }, [cartId, runQuery]);
 
     const [
         removeItem,
